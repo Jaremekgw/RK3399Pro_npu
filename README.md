@@ -1,32 +1,33 @@
 # RKNPU For RK3399Pro
-本工程主要为Rockchip RK3399Pro提供NPU驱动、相关示例等。
+This project mainly provides NPU drivers and related examples for Rockchip RK3399Pro.
 
 
-## 适用平台
+## Supported Plarform
 - RK3399Pro
 
-*注意：*  
-- 适用于RK1808/RV1109/RV1126的驱动和C API请参考：https://github.com/rockchip-linux/rknpu  
-- 适用于RK3566/RK3568/RK3588/RV1103/RV1106的驱动和C API请参考：https://github.com/rockchip-linux/rknpu2  
+* Note:
+- For drivers and C API applicable to RK1808/RV1109/RV1126, refer to: https://github.com/rockchip-linux/rknpu  
+- For drivers and C API applicable to RK3566/RK3568/RK3588/RV1103/RV1106, refer to: https://github.com/rockchip-linux/rknpu2  
 
 
 ## RKNN Toolkit
 
-在使用RKNN API进行部署之前，需要使用RKNN Toolkit或RKNN Toolkit2将原始的模型转成RKNN模型。
-- RK1808/RK1806/RV1109/RV1126/RK3399Pro 使用： https://github.com/rockchip-linux/rknn-toolkit  
-- RK3566/RK3568/RK3588/RV1103/RV1106 使用：https://github.com/rockchip-linux/rknn-toolkit2  
+Before deploying using the RKNN API, the original model needs to be converted to an RKNN model using either the RKNN Toolkit or RKNN Toolkit2.
+- For RK1808/RK1806/RV1109/RV1126/RK3399Pro use: https://github.com/rockchip-linux/rknn-toolkit  
+- For RK3566/RK3568/RK3588/RV1103/RV1106 use：https://github.com/rockchip-linux/rknn-toolkit2  
     
-具体的使用说明请参考相应的网址。
+Refer to the corresponding website for detailed instructions.
 
-## NPU驱动说明
 
-### NPU驱动目录说明
+## NPU Driver Overview
 
-RK3399Pro的NPU驱动被封装在NPU的boot.img文件中。RK3399Pro更新NPU驱动时，只要替换相应的boot.img等文件即可。
+### NPU Driver Directory Description
 
-不同的RK3399Pro开发板可能通过不同的方式（PCIE和USB 3.0）和NPU通信，所使用的boot.img等NPU固件也不同。
+The NPU driver for RK3399Pro is encapsulated in the boot.img file of the NPU. To update the NPU driver on the RK3399Pro, simply replace the relevant boot.img and other files.
 
-驱动目录主要包含如下内容
+Different RK3399Pro development boards may use different methods (PCIE and USB 3.0) to communicate with the NPU, and the NPU firmware (such as boot.img) will vary accordingly.
+
+The main contents of the driver directory are as follows:
 ```
 drivers/
 ├── npu_firmware
@@ -38,63 +39,70 @@ drivers/
     ├── linux-aarch64
     └── linux-arm
 ```
-- npu_firmware: 存放NPU固件 
-  - npu_fw_pcie: 适用于PCIE接口的NPU固件，包括boot.img, MiniLoaderAll.bin, trust.img, uboot.img等。
-  - npu_fw: 适用于USB接口的NPU固件，包括boot.img, MiniLoaderAll.bin, trust.img, uboot.img等。
-- npu_transfer_proxy: 存放适用不同操作系统的npu_transfer_proxy。AI应用和NPU通信时需要依赖npu_transfer_proxy服务。
-  
-*通过在板端执行npu_transfer_proxy devices命令，可以确认NPU连接方式是PCIE还是USB*  
+- npu_firmware: Contains NPU firmware
+  - npu_fw_pcie: NPU firmware for the PCIE interface, including boot.img, MiniLoaderAll.bin, trust.img, uboot.img, etc.
+  - npu_fw: NPU firmware for the USB interface, including boot.img, MiniLoaderAll.bin, trust.img, uboot.img, etc.
+- npu_transfer_proxy: Contains npu_transfer_proxy for different operating systems. The AI application relies on the npu_transfer_proxy service to communicate with the NPU.
+
+*To confirm the NPU connection type (PCIE or USB), run the following command on the board:
 ```
-# 如果结果如下，使用的是USB
+# For USB connection
 / # npu_transfer_proxy devices
 List of ntb devices attached
 2010fcfcde48fafd    80f3eb90    USB_DEVICE
 
-# 如果结果如下，使用的是PCIE
+# For PCI connection
 rk3399pro:/ $ npu_transfer_proxy devices
 List of ntb devices attached
 0123456789ABCDEF    cfbc0c55    PCIE
 ```
 
-### 手动更新NPU驱动
+### Manual NPU Driver Update
 
-在RK3399Pro上更新NPU驱动是通过更新NPU相关的boot.img等文件实现的。具体的更新方法如下：
+Updating the NPU driver on RK3399Pro is done by updating the boot.img and other files related to the NPU. Here’s how to update:
 
-- 更新PCIE接口NPU:
+- Updating PCIE interface NPU:
 ```
-# 如果是Android系统的固件，在更新前先获取root和读写权限，如果是Linux系统的固件，跳过这两条命令
+# If it's Android firmware, gain root access and mount the system as writable. Skip for Linux firmware.
 adb shell root
 adb shell remount
-# 更新boot.img等
+
+# Update boot.img and other files
 adb push npu_firmware/npu_pcie_fw/* /vendor/etc/npu_fw/
 adb shell reboot
 ```
 
-- 更新USB接口NPU:
+- Updating USB interface NPU:
 ```
-# 如果是Android系统的固件，在更新前先获取root和读写权限，如果是Linux系统的固件，跳过这两条命令
+# If it's Android firmware, gain root access and mount the system as writable. Skip for Linux firmware.
 adb shell root
 adb shell remount
-# 更新boot.img等
+
+# Update boot.img and other files
 adb push npu_firmware/npu_fw/* /vendor/etc/npu_fw/
 adb shell reboot
 ```
 
-***注意: 不同的RK3399Pro固件，其npu_fw的路径可能不同，在更新boot.img等文件前建议先确认下该文件夹的位置。***
+***Note: The path to npu_fw may differ depending on the RK3399Pro firmware. Verify the folder location before updating boot.img and other files.***
 
-### npu_transfer_proxy使用说明
-AI应用调用NPU进行模型初始化、推理等操作时需要依赖npu_transfer_proxy服务进行通信。  
-在运行AI应用前需要确认是否已启动npu_transfer_proxy服务。  
-默认RK3399Pro的固件会自动启动npu_transfer_proxy服务，确认方法如下：
+### npu_transfer_proxy Usage
+When the AI application interacts with the NPU for model initialization, inference, etc., it depends on the npu_transfer_proxy service for communication.
+
+Before running the AI application, ensure the npu_transfer_proxy service is running. By default, RK3399Pro firmware will automatically start this service. You can verify it with:
 ```
 / # ps -ef |grep npu_transfer_proxy
   268 root      252m S    ./usr/bin/npu_transfer_proxy
 ```
-如果能找到对应的进程，则代表该服务已启动。如果找不到对应的进程，可以手动启动该程序，并后台运行，或者将该程序添加到开机启动服务中。  
-手动启动npu_transfer_proxy并后台运行的命令如下：
+If the process is running, the service is active. If it is not running, you can start it manually and run it in the background, or add it to the boot startup services.
+
+To start npu_transfer_proxy manually and run it in the background:
 ```
 ./npu_transfer_proxy &
 ```
 
 ## RKNN C API
-RKNN C API的详细使用说明请参考[rknn-api/doc](rknn-api/doc)中的使用指南文档。
+For detailed instructions on using the RKNN C API, refer to the user guide in the rknn-api/doc folder.
+
+### Copied from original repo 
+https://github.com/airockchip/RK3399Pro_npu/tree/main
+url = https://github.com/airockchip/RK3399Pro_npu.git
